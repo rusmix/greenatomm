@@ -34,16 +34,16 @@ async function sendToChatGpt(text) {
       messages: [
         {
           role: "user",
-          content: `Сейчас тебе на вход пойдёт строка по типу: \"Миддл фулл стак разработчик typescript, kubernetes\". Такой строкой мы ищем новых работников в команду. Твоя задача: определить должность испытуемого (выбрать из:
+          content: `Сейчас тебе на вход пойдёт строка по типу: \"Миддл фулл стак разработчик typescript, kubernetes\". Такой строкой мы ищем новых работников в команду. Твоя задача: определить должность испытуемого (выбрать строго из:
             intern
             junior_specialist
             specialist
             senior_specialist
             lead_specialist
             expert
-            architect) и написать 1 слово. Далее необходимо определить стек технологий(также можно добавить что-то новое, схожее с этим). Запиши их через запятую (в данном примере это): (typescript,kubernetes,mongoDB) (тоже без пробелов).
-              Соответственно формат таков:senior_specialist,typescript,kubernetes,mongoDB,postgres,react
-              Лишние слова не использовать, слово ответ не использовать, строго придерживаться заданного формата, пояснений не нужно. Ты работаешь в автоматизированной системе без пользователя, твои ответы обрабатывает компьютер. Если не удаётся подобрать должность, то просто отправляй none
+            architect) (например, миддл будет specialist, junior это intern или junior_specialist, devOps это expert, тимлид это lead_specialist, сеньор это senior_specialist) и написать 1 слово. Если должность определить не получается, то просто используй specialist как дефолтное значение. Далее необходимо определить стек технологий и задачи (например, для тимлида это управление командой, нейросети это AI и так далее)). Запиши их через запятую (в данном примере это): (typescript,kubernetes,mongoDB) (тоже без пробелов).
+              Соответственно формат таков:senior_specialist,typescript,kubernetes,mongoDB,postgres
+              Лишние слова не использовать, слово ответ не использовать, строго придерживаться заданного формата, пояснений не нужно. Ты работаешь в автоматизированной системе без пользователя, твои ответы обрабатывает компьютер.
               Вот сама строка для обработки: ${text}`,
         },
       ],
@@ -54,7 +54,9 @@ async function sendToChatGpt(text) {
 
     const reqToMongo = result.split(",")[0];
     const stack = result.split(",").slice(1).join(" ");
-    if (reqToMongo === "none") throw "Can't find proper role";
+    if (reqToMongo === "none") {
+      return "none";
+    }
     console.log(reqToMongo, "___", stack);
     let jobLevel = await JobLevel.findOne({ name: `${reqToMongo}` });
     // jobLevel = jobLevel
@@ -65,7 +67,7 @@ async function sendToChatGpt(text) {
       messages: [
         {
           role: "user",
-          content: `Напиши текст схожий с этим, но используя другие технологии (что должен уметь специалист?) (добавь схожие технологии от себя): ${stack}. Текст-пример: ${jobLevel.responsibilities}`,
+          content: `Напиши текст схожий с этим(это описание обязанностей разработчика, не углубляться в описание технологий), но обязательно используя технологии из этого списка или смежные с ним: ${stack}. Текст необходимо писать на русском языке. Текст-пример: ${jobLevel.responsibilities}`,
         },
       ],
     });

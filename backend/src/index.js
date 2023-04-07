@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api", router);
 mongoose.connect(process.env.MONGO_URL);
-
+const port = process.env.PORT
 // initChatGpt();
 // const newJobLevel = new JobLevel({ name: "архитектор" });
 // newJobLevel.responsibilities = `1. Проектирование архитектуры приложения:
@@ -27,6 +27,6 @@ mongoose.connect(process.env.MONGO_URL);
 //   console.log(doc);
 // });
 
-app.listen(4001, () => {
-  console.log("Сервер запущен на порту 4001");
+app.listen(port, () => {
+  console.log(`Сервер запущен на порту ${port}`);
 });

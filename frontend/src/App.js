@@ -9,13 +9,14 @@ function App() {
   const [inputValues, setInputValues] = useState([""]);
   const [downloadLink, setDownloadLink] = useState("");
   const [status, setStatus] = useState("");
+  const [history, setHistory] = useState([]);
   // useEffect(() => {
   //   fetchData();
   // }, []);
 
   // async function fetchData() {
   //   try {
-  //     const response = await fetch("http://localhost:4001/api/example");
+  //     const response = await fetch("http://localhost:4002/api/example");
   //     const data = await response.text();
   //     setData(data);
   //   } catch (error) {
@@ -23,10 +24,24 @@ function App() {
   //   }
   // }
 
-  async function sendData(data) {
-    setStatus("Creating document...");
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  async function fetchHistory() {
     try {
-      const response = await fetch("http://localhost:4001/api/generate-link", {
+      const response = await fetch("http://localhost:4002/api/history");
+      const data = await response.json();
+      setHistory(data);
+    } catch (error) {
+      console.error("Error fetching history:", error);
+    }
+  }
+
+  async function sendData(data) {
+    setStatus("Создание документа...");
+    try {
+      const response = await fetch("http://localhost:4002/api/generate-link", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,6 +64,10 @@ function App() {
       sendData({ text: e.target.value });
     }
   };
+  const handleSubmit = () => {
+    setProcessedText(text);
+    sendData({ text: text });
+  };
 
   return (
     <Router>
@@ -61,8 +80,10 @@ function App() {
               setText={setText}
               processedText={processedText}
               handleKeyDown={handleKeyDown}
+              handleSubmit={handleSubmit}
               status={status}
               downloadLink={downloadLink}
+              history={history}
             />
           }
         />
@@ -85,29 +106,69 @@ function MainPage({
   setText,
   handleKeyDown,
   processedText,
+  handleSubmit,
   status,
   downloadLink,
+  history,
 }) {
   return (
     <div className="App">
       <h2>Должностная инструкция</h2>
-      <input
-        className="text-bar"
-        type="text"
-        placeholder="Введите запрос..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-      />
-      {status === "Creating document..." && <p>{status}</p>}
-      {status === "Download file" && (
-        <a href={downloadLink} download="example.docx" className="download-button">Скачать</a>
+      <div className="input-container">
+        <input
+          className="text-bar"
+          type="text"
+          placeholder="Введите запрос..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <button className="submit-button" onClick={handleSubmit}>
+          Отправить
+        </button>
+      </div>
+      {status === "Создание документа..." && <p>{status}</p>}
+      {status === "Download file" && downloadLink !== "error" && (
+        <div>
+          <a
+            href={downloadLink.split(".").slice(0, -1).join(".") + ".docx"}
+            download="example.docx"
+            className="download-button"
+          >
+            Скачать docx
+          </a>
+          <a
+            href={downloadLink.split(".").slice(0, -1).join(".") + ".pdf"}
+            download="example.pdf"
+            className="download-button"
+          >
+            Скачать pdf
+          </a>
+        </div>
       )}
+      {status === "Download file" && downloadLink === "error" && <p>Ошибка</p>}
       {/* <Link to="/jobs">
         <button className="plus-button
         ">+</button>
       </Link> */}
       {/* <p className="processed-text">{processedText}</p> */}
+      <div className="history-container">
+        <h3>История запросов</h3>
+        <ul>
+          {history.map((item, index) => (
+            <li key={index} className="history-item">
+              <a
+                className="history-button"
+                href={`http://localhost:4002/api/history/${encodeURIComponent(
+                  item
+                )}`}
+              >
+                {item}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
