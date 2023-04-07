@@ -3,7 +3,6 @@
 # dependencies
 /backend/.env
 /backend/node_modules
-/backend/files/*
 /frontend/.env
 /frontend/node_modules
 
